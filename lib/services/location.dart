@@ -6,15 +6,16 @@ import 'package:tenki/utilities/constants.dart';
 
 // get location of user
 class Location {
-  late double latitude;
-  late double longitude;
+  late double _latitude;
+  late double _longitude;
 //Get user position
-  Future<void> getPosition() async {
+  Future<void> fetchWeatherData() async {
     bool serviceEnabled;
     LocationPermission permission;
 
     /// Check if GPS is enabeld
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
     if (!serviceEnabled) {
       //throw 'Location services are disabled.';
       return Future.error('Location services are disabled.');
@@ -23,9 +24,10 @@ class Location {
     /// Check for permission of using localisation
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      //permisison is denied so request it.
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        /// permission is denied by user
+        /// permission is denied again by user
         return Future.error('Location permissions are denied.');
       }
     }
@@ -36,56 +38,59 @@ class Location {
 
     /// all is ok, give me the position
     Position position = await Geolocator.getCurrentPosition();
-    longitude = position.longitude;
-    latitude = position.latitude;
-    getData(lat: latitude, long: longitude);
-  }
+    //give me the wether Data
+    _latitude = position.latitude;
+    _longitude = position.longitude;
 
-//get weather Data
-  Future<void> getData({required double lat, required double long}) async {
+    //now fetch the data using position
     Uri url = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$long&exclude={alerts}&appid=$kApiKey');
+        'https://api.openweathermap.org/data/2.5/weather?lat=$_latitude&lon=$_longitude&exclude={alerts}&appid=$kApiKey');
+
     http.Response response = await http.get(url);
-    debugPrint(response.body);
-    //return response;
+
+    if (response.statusCode == 200) {
+      debugPrint('successful fetching');
+      debugPrint('successful fetching : ${response.statusCode.toString()}');
+      //debugPrint(response.body);
+    } else {
+      debugPrint('failed fetching : ${response.statusCode.toString()}');
+      return Future.error(
+          'Error ${response.statusCode.toString()} failed to reach Data');
+    }
   }
 
 //check if user have access to internet
   Future<bool> hasInternetAccess() async {
-    //var connectivityResult = Connectivity().checkConnectivity();
     final connectivityResult = await (Connectivity().checkConnectivity());
-    return connectivityResult == ConnectivityResult.mobile ||
-        connectivityResult == ConnectivityResult.wifi;
+    return (connectivityResult == ConnectivityResult.mobile ||
+        connectivityResult == ConnectivityResult.wifi);
   }
 
+//let's use all this method to have users weather data
   void getLocation(context) {
-    hasInternetAccess().then((hasInternet) {
-      //if user has access to internet
-      if (hasInternet) {
-        getPosition().then((position) {
-          // Handle successful location retrieval
-          debugPrint(
-              'Location: longitude is $longitude\n latitude is $latitude ');
-        }).catchError((error) {
-          // Handle errors
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(error.toString()),
-            //only when permission permanently denied go to settings
-            action: error.toString() ==
-                    'Location permissions are permanently denied.'
-                ? SnackBarAction(
-                    label: "give Permission",
-                    textColor: Colors.amber,
-                    onPressed: () => Geolocator.openAppSettings())
-                : null,
+    hasInternetAccess().then(
+      (interntOK) {
+        if (interntOK) {
+          fetchWeatherData().catchError((error) {
+            // Handle errors
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(error.toString()),
+              //only when permission permanently denied go to settings
+              action: error.toString() ==
+                      'Location permissions are permanently denied.'
+                  ? SnackBarAction(
+                      label: "give Permission",
+                      textColor: Colors.amber,
+                      onPressed: () => Geolocator.openAppSettings())
+                  : null,
+            ));
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("no internet access"),
           ));
-        });
-      } else {
-        //no acess to internet ? so :
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('No internet connection.'),
-        ));
-      }
-    });
+        }
+      },
+    );
   }
 }

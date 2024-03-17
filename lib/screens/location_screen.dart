@@ -5,6 +5,7 @@ class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _LocationScreenState createState() => _LocationScreenState();
 }
 

@@ -19,4 +19,4 @@ const kConditionTextStyle = TextStyle(
   fontSize: 100.0,
 );
 
-String kApiKey = '1b2ef816c442cf9bd5b26aa56be85b8d';
+String kApiKey = '1b2ef816c442cf9bd5b26aa56be85bd';
