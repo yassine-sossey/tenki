@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:tenki/screens/loading_screen.dart';
 import 'package:tenki/utilities/constants.dart';
+import 'package:tenki/services/weather.dart';
 
 class LocationScreen extends StatefulWidget {
-  const LocationScreen({super.key});
+  final dynamic data;
+
+  const LocationScreen({super.key, required this.data});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -10,8 +14,20 @@ class LocationScreen extends StatefulWidget {
 }
 
 class _LocationScreenState extends State<LocationScreen> {
+  WeatherModel weatherModel = WeatherModel();
+  late int condition;
+  late int temp;
+  late String city;
+  late String weatherMessage;
+  late String weatherIcon;
+
   @override
   Widget build(BuildContext context) {
+    condition = widget.data['weather'][0]['id'];
+    temp = widget.data['main']['temp'].toInt();
+    city = widget.data['name'];
+    weatherMessage = weatherModel.getMessage(temp);
+    weatherIcon = weatherModel.getWeatherIcon(condition);
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -32,41 +48,41 @@ class _LocationScreenState extends State<LocationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: ((context) => const LoadingScreen())));
+                    },
                     child: const Icon(
-                      Icons.near_me,
-                      size: 50.0,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Icon(
-                      Icons.location_city,
+                      Icons.home,
+                      color: Colors.black,
                       size: 50.0,
                     ),
                   ),
                 ],
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 15.0),
+              Container(
+                alignment: Alignment.center,
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      '32°',
+                      '$temp°',
                       style: kTempTextStyle,
                     ),
                     Text(
-                      '☀️',
+                      weatherIcon,
                       style: kConditionTextStyle,
                     ),
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(right: 15.0),
+              Container(
+                alignment: Alignment.center,
                 child: Text(
-                  "It's 🍦 time in San Francisco!",
-                  textAlign: TextAlign.right,
+                  "$weatherMessage in $city",
+                  textAlign: TextAlign.center,
                   style: kMessageTextStyle,
                 ),
               ),
