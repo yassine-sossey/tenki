@@ -1,3 +1,3 @@
 # tenki
 
-A new Flutter project.
+flutter App to display live weather forecast 
